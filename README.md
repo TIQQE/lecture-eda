@@ -55,4 +55,8 @@ command.
  * `cdk diff`        compare deployed stack with current state
  * `cdk docs`        open CDK documentation
 
-Enjoy!
+## Deployment
+Before deployment you need to add `dotenv file` in the root of this project as `.env`.
+In this file you need to add two fields:
+1. `AWSACCOUNT=<The account number for deployment>`         
+2. `AWSREGION=<The region for deployment>` for example `eu-north-1`
