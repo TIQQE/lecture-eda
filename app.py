@@ -2,27 +2,41 @@
 import os
 
 import aws_cdk as cdk
+from dotenv import load_dotenv
 
-from lecture_eda.lecture_eda_stack import LectureEdaStack
+from backend.stacks.eda_stack import EdaStack
 
+direnv_path = os.path.join(os.path.dirname(__file__), ".env")
+if os.path.exists(direnv_path):
+    load_dotenv(direnv_path)
 
-app = cdk.App()
-LectureEdaStack(app, "LectureEdaStack",
-    # If you don't specify 'env', this stack will be environment-agnostic.
-    # Account/Region-dependent features and context lookups will not work,
-    # but a single synthesized template can be deployed anywhere.
+stage = os.environ.get('STAGE') or 'dev'
+account = os.environ.get('AWSACCOUNT')
+region = os.environ.get('AWSREGION')
 
-    # Uncomment the next line to specialize this stack for the AWS Account
-    # and Region that are implied by the current CLI configuration.
+context = {
+    "STAGE": stage,
+    "AWS_ACCOUNT": account,
+    "REGION": region
+}
 
-    #env=cdk.Environment(account=os.getenv('CDK_DEFAULT_ACCOUNT'), region=os.getenv('CDK_DEFAULT_REGION')),
+env = cdk.Environment(
+    account=account,
+    region=region
+)
 
-    # Uncomment the next line if you know exactly what Account and Region you
-    # want to deploy the stack to. */
+app = cdk.App(context=context)
+EdaStack(
+    app, 
+    "EdaStack",
+    env=cdk.Environment(
+    account=account,
+    region=region
+))
 
-    #env=cdk.Environment(account='123456789012', region='us-east-1'),
-
-    # For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html
-    )
+print("The following paramets have been set:")
+print(f"* {stage}")
+print(f"* {account}")
+print(f"* {region}")
 
 app.synth()
