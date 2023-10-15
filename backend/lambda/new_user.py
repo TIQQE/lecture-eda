@@ -71,17 +71,3 @@ def lambda_handler(event, context):
 
     # Returns success reponse to API Gateway
     return { "statusCode": 200 }
-
-
-# def init_dynamo(table_name: str):
-#     if table is None:
-#         logger.info("Initializing DynamoDB table")
-#         table = dynamodb.Table(table_name)
-#     logger.info("Reusing DynamoDB client")
-
-# def init_eventbus():
-#     if events is None:
-#         logger.info("Initializing event bus")
-#         events = boto3.client('events')
-#         return
-#     logger.info("Reusing event bus client")

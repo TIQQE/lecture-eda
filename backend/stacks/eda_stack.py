@@ -7,6 +7,7 @@ from aws_cdk import (
     aws_events as events,
     aws_events_targets as events_targets,
     aws_sns as sns,
+    CfnOutput,
 
 )
 from constructs import Construct
@@ -15,7 +16,7 @@ class EdaStack(Stack):
 
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
-
+        # DynamoDB table for users
         user_table = dynamodb.Table(
             self, "UserTable",
             table_name="eda-user-table",
@@ -30,11 +31,13 @@ class EdaStack(Stack):
             billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
         )
 
+        # Event bus
         event_bus = events.EventBus(
             self, "EventBus",
             event_bus_name="eda-lecture-event-bus",
         )
 
+        # Lambda function to create a new user
         new_user_handler = _lambda.Function(
             self, "NewUserLambda",
             function_name="NewUser",
@@ -49,14 +52,17 @@ class EdaStack(Stack):
             description="Example Lambda function to create a new user for EDA lecture",
         )
 
+        # grant permissions to new_user_handler
         user_table.grant_write_data(new_user_handler)
         event_bus.grant_put_events_to(new_user_handler)
 
+        # SNS topic to notify user
         notify_user_topic = sns.Topic(
             self, "NotifyNewUserSNS",
             display_name="Notify New User SNS, EDA lecture",
         )
 
+        # Lambda function to notify user
         notify_user_handler = _lambda.Function(
             self, "NotifyUserLambda",
             function_name="NotifyUser",
@@ -83,14 +89,17 @@ class EdaStack(Stack):
             )
         )
 
+        # add target to user_created_rule
         user_created_rule.add_target(
             events_targets.LambdaFunction(
                 notify_user_handler
             )
         )
 
+        # grant permissions to notify_user_handler
         notify_user_topic.grant_publish(notify_user_handler)
 
+        # API Gateway for customer service
         customer_api = apigateway.RestApi(
             self, "CustomerApi",
             rest_api_name="Customer Service",
@@ -104,6 +113,7 @@ class EdaStack(Stack):
             ),
         )
 
+        # request validator for customer_api
         customer_request_validator = apigateway.RequestValidator(
             self, "CustomerRequestValidator",
             rest_api=customer_api,
@@ -111,6 +121,7 @@ class EdaStack(Stack):
             validate_request_body=True,
         )
 
+        # defining a model for validating incoming requests to customer_api
         add_user_model = customer_api.add_model(
             "AddUserModel",
             content_type="application/json",
@@ -133,6 +144,7 @@ class EdaStack(Stack):
             }
         )
 
+        # adding response for validation errors
         customer_api.add_gateway_response(
             "GatewayResponse400",
             status_code="400",
@@ -142,8 +154,10 @@ class EdaStack(Stack):
 
         new_user_integration = apigateway.LambdaIntegration(new_user_handler)
 
+        # adding resource for new-user
         new_user_resource = customer_api.root.add_resource("new-user")
 
+        # adding method for new-user
         new_user_resource.add_method(
             http_method="POST",
             integration=new_user_integration,
@@ -152,12 +166,14 @@ class EdaStack(Stack):
             request_validator=customer_request_validator
         )
 
+        # API key for customer_api
         api_key = customer_api.add_api_key(
             "ApiKey",
             api_key_name="eda-lecture-api-key",
             description="API Key for EDA lecture"
         )
 
+        # usage plan for customer_api
         usage_plan = customer_api.add_usage_plan(
             "UsagePlan",
             name="eda-lecture-usage-plan",
