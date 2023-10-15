@@ -7,8 +7,7 @@ from aws_cdk import (
     aws_events as events,
     aws_events_targets as events_targets,
     aws_sns as sns,
-    CfnOutput,
-
+    RemovalPolicy
 )
 from constructs import Construct
 
@@ -29,6 +28,7 @@ class EdaStack(Stack):
                 type=dynamodb.AttributeType.STRING
             ),
             billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
+            removal_policy=RemovalPolicy.DESTROY,
         )
 
         # Event bus
